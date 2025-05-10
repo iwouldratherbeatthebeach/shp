@@ -1,0 +1,725 @@
+<form version="1.1" theme="dark">
+  <label>Search Concurrency vs CPU Load Memory Dashboard</label>
+  <fieldset submitButton="true" autoRun="true">
+    <input type="time" token="time" searchWhenChanged="false">
+      <label>Time Range</label>
+      <default>
+        <earliest>-60m@m</earliest>
+        <latest>now</latest>
+      </default>
+    </input>
+    <input type="text" token="filter_sh">
+      <label>Filter SH</label>
+      <default></default>
+    </input>
+    <input type="multiselect" token="filter_idx">
+      <label>Filter IDX</label>
+      <choice value="*">All</choice>
+      <fieldForLabel>splunk_server</fieldForLabel>
+      <fieldForValue>splunk_server</fieldForValue>
+      <search>
+        <query>| tstats count where index=_internal by splunk_server</query>
+      </search>
+      <initialValue>*</initialValue>
+      <delimiter> </delimiter>
+    </input>
+    <input type="text" token="timechart_span">
+      <label>Timechart Span in Seconds</label>
+      <default>60</default>
+      <initialValue>60</initialValue>
+    </input>
+    <input type="text" token="limit">
+      <label>Items per Chart Limit</label>
+      <default>10</default>
+      <initialValue></initialValue>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <html>
+          <div style="text-align: left;">
+            <h1/>
+            <h1>Search Concurrency on Search Heads</h1>
+          </div>
+        </html>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Min Search Concurrency</title>
+      <single>
+        <search base="sc_stats">
+          <query>
+            | stats min(distinct_search_count) as min_search_concurrency
+          </query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="numberPrecision">0</option>
+        <option name="rangeColors">["0x53a051","0x0877a6","0xf8be34","0xf1813f","0xdc4e41"]</option>
+        <option name="refresh.display">progressbar</option>
+      </single>
+    </panel>
+    <panel>
+      <title>Median Search Concurrency</title>
+      <single>
+        <search base="sc_stats">
+          <query>
+            | stats median(distinct_search_count) as median_search_concurrency
+          </query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="numberPrecision">0</option>
+        <option name="rangeColors">["0x53a051","0x0877a6","0xf8be34","0xf1813f","0xdc4e41"]</option>
+        <option name="refresh.display">progressbar</option>
+      </single>
+    </panel>
+    <panel>
+      <title>Average Search Concurrency</title>
+      <single>
+        <search base="sc_stats">
+          <query>
+            | stats avg(distinct_search_count) as avg_search_concurrency
+          </query>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="numberPrecision">0.00</option>
+        <option name="rangeColors">["0x116632","0x116632"]</option>
+        <option name="rangeValues">[100]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+    <panel>
+      <title>P90 Search Concurrency</title>
+      <single>
+        <search base="sc_stats">
+          <query>
+            | stats p90(distinct_search_count) as p90_search_concurrency
+          </query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="numberPrecision">0</option>
+        <option name="rangeColors">["0x53a051","0x0877a6","0xf8be34","0xf1813f","0xdc4e41"]</option>
+        <option name="refresh.display">progressbar</option>
+      </single>
+    </panel>
+    <panel>
+      <title>P95 Search Concurrency</title>
+      <single>
+        <search base="sc_stats">
+          <query>
+            | stats p95(distinct_search_count) as p95_search_concurrency
+          </query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="numberPrecision">0</option>
+        <option name="rangeColors">["0x53a051","0x0877a6","0xf8be34","0xf1813f","0xdc4e41"]</option>
+        <option name="refresh.display">progressbar</option>
+      </single>
+    </panel>
+    <panel>
+      <title>Max Search Concurrency</title>
+      <single>
+        <search base="sc_stats">
+          <query>
+            | stats max(distinct_search_count) as max_search_concurrency
+          </query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="numberPrecision">0</option>
+        <option name="rangeColors">["0x53a051","0x0877a6","0xf8be34","0xf1813f","0xdc4e41"]</option>
+        <option name="refresh.display">progressbar</option>
+      </single>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <chart>
+        <title>Search Concurrency on Search Heads</title>
+        <search base="sc_stats">
+          <query>
+            | timechart span=$timechart_span$s min(distinct_search_count) as min_search_concurrency, avg(distinct_search_count) as avg_search_concurrency, max(distinct_search_count) as max_search_concurrency
+            | eval avg_search_concurrency = round(avg_search_concurrency, 2)
+          </query>
+        </search>
+        <option name="charting.axisTitleY.text">Search Concurrency on Search Heads</option>
+        <option name="charting.chart">line</option>
+        <option name="charting.chart.nullValueMode">zero</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.drilldown">all</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <chart>
+        <title>Average Search Concurrency by Search Type</title>
+        <search>
+          <query>
+            index=_introspection $filter_sh$
+            | eval sid = 'data.search_props.sid'
+            | eval type = 'data.search_props.type'
+            | bin _time span=10s
+            | stats dc(sid) AS distinct_search_count by _time, type
+            | timechart span=$timechart_span$s avg(distinct_search_count) as avg_search_concurrency by type
+            | foreach * [eval &lt;&lt;FIELD&gt;&gt;=if(isnum('&lt;&lt;FIELD&gt;&gt;'), round('&lt;&lt;FIELD&gt;&gt;',2), '&lt;&lt;FIELD&gt;&gt;')]
+          </query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+        <option name="charting.axisTitleY.text">Average Search Concurrency by Search Type</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.nullValueMode">zero</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.drilldown">all</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <html>
+          <div style="text-align: left;">
+            <h1/>
+            <h1>System Resources Overview</h1>
+          </div>
+        </html>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Search Heads Average CPU</title>
+      <single>
+        <search base="res_sh">
+          <query>
+            | stats  avg(cpu) as avg_cpu_usage
+          </query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="rangeColors">["0x53a051","0x0877a6","0xf8be34","0xf1813f","0xdc4e41"]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="unit">%</option>
+      </single>
+    </panel>
+    <panel>
+      <title>Indexers Average CPU</title>
+      <single>
+        <search base="idx_cpu">
+          <query>
+            | eval load=normalized_load_avg_1min
+            | stats avg(cpu) as avg_cpu_usage
+          </query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="rangeColors">["0x53a051","0x0877a6","0xf8be34","0xf1813f","0xdc4e41"]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="unit">%</option>
+      </single>
+    </panel>
+    <panel>
+      <title>Search Heads Average Load</title>
+      <single>
+        <search base="res_sh">
+          <query>
+            | stats avg(load) as average_load
+            | eval average_load = round(average_load, 2)</query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="numberPrecision">0.00</option>
+        <option name="rangeColors">["0x53a051","0x0877a6","0xf8be34","0xf1813f","0xdc4e41"]</option>
+        <option name="refresh.display">progressbar</option>
+      </single>
+    </panel>
+    <panel>
+      <title>Indexers Average Load</title>
+      <single>
+        <search base="idx_load">
+          <query>
+            | stats avg(load) as average_load
+            | eval average_load = round(average_load, 2)
+          </query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="numberPrecision">0.00</option>
+        <option name="rangeColors">["0x53a051","0x0877a6","0xf8be34","0xf1813f","0xdc4e41"]</option>
+        <option name="refresh.display">progressbar</option>
+      </single>
+    </panel>
+    <panel>
+      <title>Search Heads Average Memory</title>
+      <single>
+        <search base="res_sh">
+          <query>
+            | stats avg(mem_used) as avg_mem_usage
+            | eval avg_mem_usage = round(avg_mem_usage,2)
+          </query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="numberPrecision">0.0</option>
+        <option name="rangeColors">["0x53a051","0x0877a6","0xf8be34","0xf1813f","0xdc4e41"]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="unit">GB</option>
+      </single>
+    </panel>
+    <panel>
+      <title>Indexers Average Memory</title>
+      <single>
+        <search base="idx_mem">
+          <query>
+            | stats avg(mem_used) as avg_mem_usage
+            | eval avg_mem_usage = round(avg_mem_usage,2)
+          </query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="numberPrecision">0.0</option>
+        <option name="rangeColors">["0x53a051","0x0877a6","0xf8be34","0xf1813f","0xdc4e41"]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="unit">GB</option>
+      </single>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Search Heads P90 CPU</title>
+      <single>
+        <search base="res_sh">
+          <query>
+            | stats  p90(cpu) as p90_cpu_usage
+          </query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="rangeColors">["0x53a051","0x0877a6","0xf8be34","0xf1813f","0xdc4e41"]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="unit">%</option>
+      </single>
+    </panel>
+    <panel>
+      <title>Indexers P90 CPU</title>
+      <single>
+        <search base="idx_cpu">
+          <query>
+            | stats p90(cpu) as p90_cpu_usage
+          </query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="rangeColors">["0x53a051","0x0877a6","0xf8be34","0xf1813f","0xdc4e41"]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="unit">%</option>
+      </single>
+    </panel>
+    <panel>
+      <title>Search Heads P90 Load</title>
+      <single>
+        <search base="res_sh">
+          <query>
+            | stats p90(load) as p90_average_load
+            | eval p90_average_load = round(p90_average_load, 2)
+          </query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="numberPrecision">0.00</option>
+        <option name="rangeColors">["0x53a051","0x0877a6","0xf8be34","0xf1813f","0xdc4e41"]</option>
+        <option name="refresh.display">progressbar</option>
+      </single>
+    </panel>
+    <panel>
+      <title>Indexers P90 Load</title>
+      <single>
+        <search base="idx_load">
+          <query>
+            | stats p90(load) as p90_average_load
+            | eval p90_average_load = round(p90_average_load, 2)
+          </query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="numberPrecision">0.00</option>
+        <option name="rangeColors">["0x53a051","0x0877a6","0xf8be34","0xf1813f","0xdc4e41"]</option>
+        <option name="refresh.display">progressbar</option>
+      </single>
+    </panel>
+    <panel>
+      <title>Search Heads P90 Memory</title>
+      <single>
+        <search base="res_sh">
+          <query>
+            | stats p90(mem_used) as p90_mem_usage
+            | eval p90_mem_usage = round(p90_mem_usage, 2)
+          </query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="numberPrecision">0.0</option>
+        <option name="rangeColors">["0x53a051","0x0877a6","0xf8be34","0xf1813f","0xdc4e41"]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="unit">GB</option>
+      </single>
+    </panel>
+    <panel>
+      <title>Indexers P90 Memory</title>
+      <single>
+        <search base="idx_mem">
+          <query>
+            | stats p90(mem_used) as p90_mem_usage
+            | eval p90_mem_usage = round(p90_mem_usage,2)</query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="numberPrecision">0.0</option>
+        <option name="rangeColors">["0x53a051","0x0877a6","0xf8be34","0xf1813f","0xdc4e41"]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="unit">GB</option>
+      </single>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Search Heads Max CPU</title>
+      <single>
+        <search base="res_sh">
+          <query>
+            | stats  max(cpu) as max_cpu_usage
+          </query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="rangeColors">["0x53a051","0x0877a6","0xf8be34","0xf1813f","0xdc4e41"]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="unit">%</option>
+      </single>
+    </panel>
+    <panel>
+      <title>Indexers Max CPU</title>
+      <single>
+        <search base="idx_cpu">
+          <query>
+            | stats max(cpu) as max_cpu_usage
+          </query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="rangeColors">["0x53a051","0x0877a6","0xf8be34","0xf1813f","0xdc4e41"]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="unit">%</option>
+      </single>
+    </panel>
+    <panel>
+      <title>Search Heads Max Load</title>
+      <single>
+        <search base="res_sh">
+          <query>
+            | stats max(load) as max_average_load
+            | eval max_average_load = round(max_average_load, 2)
+          </query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="numberPrecision">0.00</option>
+        <option name="rangeColors">["0x53a051","0x0877a6","0xf8be34","0xf1813f","0xdc4e41"]</option>
+        <option name="refresh.display">progressbar</option>
+      </single>
+    </panel>
+    <panel>
+      <title>Indexers Max Load</title>
+      <single>
+        <search base="idx_load">
+          <query>
+            | stats max(load) as max_average_load
+            | eval max_average_load = round(max_average_load, 2)
+          </query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="numberPrecision">0.00</option>
+        <option name="rangeColors">["0x53a051","0x0877a6","0xf8be34","0xf1813f","0xdc4e41"]</option>
+        <option name="refresh.display">progressbar</option>
+      </single>
+    </panel>
+    <panel>
+      <title>Search Heads Max Memory</title>
+      <single>
+        <search base="res_sh">
+          <query>
+            | stats max(mem_used) as max_mem_usage
+            | eval max_mem_usage = round(max_mem_usage,2)
+          </query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="numberPrecision">0.0</option>
+        <option name="rangeColors">["0x53a051","0x0877a6","0xf8be34","0xf1813f","0xdc4e41"]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="unit">GB</option>
+      </single>
+    </panel>
+    <panel>
+      <title>Indexers Max Memory</title>
+      <single>
+        <search base="idx_mem">
+          <query>
+            | stats max(mem_used) as max_mem_usage
+            | eval max_mem_usage = round(max_mem_usage,2)
+          </query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="numberPrecision">0.0</option>
+        <option name="rangeColors">["0x53a051","0x0877a6","0xf8be34","0xf1813f","0xdc4e41"]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="unit">GB</option>
+      </single>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <html>
+          <div style="text-align: left;">
+            <h1/>
+            <h1>Search Heads Resource Usage</h1>
+          </div>
+        </html>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <chart>
+        <title>SHs P90 CPU Usage by Host</title>
+        <search base="res_sh">
+          <query>| timechart span=$timechart_span$s p90(cpu) as p90_cpu_usage by host limit=0 useother=false usenull=false
+            | foreach * [eval &lt;&lt;FIELD&gt;&gt;=if(isnum('&lt;&lt;FIELD&gt;&gt;'), round('&lt;&lt;FIELD&gt;&gt;',2), '&lt;&lt;FIELD&gt;&gt;')]</query>
+        </search>
+        <option name="charting.axisTitleY.text">P90 CPU Percent Usage</option>
+        <option name="charting.chart">line</option>
+        <option name="charting.chart.nullValueMode">zero</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.drilldown">all</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <chart>
+        <title>SHs Min, Median, and Max Average Load Hostwide</title>
+        <search base="res_sh">
+          <query>
+            | timechart span=$timechart_span$s min(load) as min_load, median(load) as median_load, max(load) as max_load, min(cpu_count) as physical_cpu_cores, min(virtual_cpu_count) as virtual_cpu_cores
+            | eval overload_line = virtual_cpu_cores/physical_cpu_cores
+            | table _time max_load overload_line median_load min_load
+            | foreach * [ eval &lt;&lt;FIELD&gt;&gt;=if(isnum('&lt;&lt;FIELD&gt;&gt;'), round('&lt;&lt;FIELD&gt;&gt;',2), '&lt;&lt;FIELD&gt;&gt;')]</query>
+        </search>
+        <option name="charting.axisTitleY.text">Average Load</option>
+        <option name="charting.chart">line</option>
+        <option name="charting.chart.nullValueMode">zero</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.drilldown">all</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <chart>
+        <title>SHs Max Memory Usage by Host</title>
+        <search base="res_sh">
+          <query>| timechart span=$timechart_span$s max(mem_used) as max_mem_usage_gb by host limit=0 useother=false usenull=false
+            | foreach * [eval &lt;&lt;FIELD&gt;&gt;=if(isnum('&lt;&lt;FIELD&gt;&gt;'), round('&lt;&lt;FIELD&gt;&gt;',0), '&lt;&lt;FIELD&gt;&gt;')]</query>
+        </search>
+        <option name="charting.axisTitleY.text">Memory Usage [GB]</option>
+        <option name="charting.chart">line</option>
+        <option name="charting.chart.nullValueMode">zero</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.drilldown">all</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <html>
+          <div style="text-align: left;">
+            <h1/>
+            <h1>Indexer Resource Usage</h1>
+          </div>
+        </html>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <chart>
+        <title>Indexers P90 CPU Usage by Host</title>
+        <search base="idx_cpu">
+          <query>
+            | timechart span=$timechart_span$s p90(cpu) as p90_cpu_usage by host limit=$limit$ useother=false usenull=false
+            | foreach * [eval &lt;&lt;FIELD&gt;&gt;=if(isnum('&lt;&lt;FIELD&gt;&gt;'), round('&lt;&lt;FIELD&gt;&gt;',2), '&lt;&lt;FIELD&gt;&gt;')]
+          </query>
+        </search>
+        <option name="charting.axisTitleY.text">P90 CPU Percent Usage</option>
+        <option name="charting.chart">line</option>
+        <option name="charting.chart.nullValueMode">zero</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.drilldown">all</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <chart>
+        <title>Indexers Min, Median, and Max CPU Percent Usage Hostwide</title>
+        <search base="idx_cpu">
+          <query>
+            | timechart span=$timechart_span$s min(cpu) as min_cpu_usage, median(cpu) as median_cpu_usage max(cpu) as max_cpu_usage
+            | foreach * [eval &lt;&lt;FIELD&gt;&gt;=if(isnum('&lt;&lt;FIELD&gt;&gt;'), round('&lt;&lt;FIELD&gt;&gt;',2), '&lt;&lt;FIELD&gt;&gt;')]
+          </query>
+        </search>
+        <option name="charting.axisTitleY.text">CPU Percent Usage</option>
+        <option name="charting.chart">line</option>
+        <option name="charting.chart.nullValueMode">zero</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.drilldown">all</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <chart>
+        <title>Indexers Total, Min, Median, and Max CPU Cores Usage Hostwide</title>
+        <search base="idx_cpu">
+          <query>
+            | timechart span=$timechart_span$s min(virtual_cpu_count) as total_cpu_cores, min(cpu) as min_cpu_usage, median(cpu) as median_cpu_usage max(cpu) as max_cpu_usage
+            | eval min_cpu_cores = min_cpu_usage * total_cpu_cores/100
+            | eval median_cpu_cores = median_cpu_usage * total_cpu_cores/100
+            | eval max_cpu_cores = max_cpu_usage * total_cpu_cores/100
+            | eval saturation_line = total_cpu_cores - 1
+            | table _time total_cpu_cores saturation_line max_cpu_cores median_cpu_cores min_cpu_cores
+            | foreach * [eval &lt;&lt;FIELD&gt;&gt;=if(isnum('&lt;&lt;FIELD&gt;&gt;'), round('&lt;&lt;FIELD&gt;&gt;',2), '&lt;&lt;FIELD&gt;&gt;')]
+          </query>
+        </search>
+        <option name="charting.axisTitleY.text">CPU Cores Usage</option>
+        <option name="charting.chart">line</option>
+        <option name="charting.chart.nullValueMode">zero</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.drilldown">all</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <chart>
+        <title>Indexers Min, Median, and Max Average Load Hostwide</title>
+        <search base="idx_load">
+          <query>
+            | timechart span=$timechart_span$s min(load) as min_load, median(load) as median_load, max(load) as max_load, min(cpu_count) as physical_cpu_cores, min(virtual_cpu_count) as virtual_cpu_cores
+            | eval overload_line = virtual_cpu_cores/physical_cpu_cores
+            | table _time max_load overload_line median_load min_load
+            | foreach * [ eval &lt;&lt;FIELD&gt;&gt;=if(isnum('&lt;&lt;FIELD&gt;&gt;'), round('&lt;&lt;FIELD&gt;&gt;',2), '&lt;&lt;FIELD&gt;&gt;')]
+          </query>
+        </search>
+        <option name="charting.axisTitleY.text">Average Load</option>
+        <option name="charting.chart">line</option>
+        <option name="charting.chart.nullValueMode">zero</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.drilldown">all</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <chart>
+        <title>Indexers Max Memory Usage by Host</title>
+        <search base="idx_mem">
+          <query>
+            | timechart span=$timechart_span$s avg(mem_used) as avg_mem_usage_gb by host limit=$limit$ useother=false usenull=false
+            | foreach * [ eval &lt;&lt;FIELD&gt;&gt;=if(isnum('&lt;&lt;FIELD&gt;&gt;'), round('&lt;&lt;FIELD&gt;&gt;',0), '&lt;&lt;FIELD&gt;&gt;')]
+          </query>
+        </search>
+        <option name="charting.axisTitleY.text">Memory Usage [GB]</option>
+        <option name="charting.chart">line</option>
+        <option name="charting.chart.nullValueMode">zero</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.drilldown">all</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <table depends="$hide_me$">
+        <search id="sc_stats">
+          <query>
+            | tstats dc(data.search_props.sid) AS distinct_search_count
+              where index=_introspection
+              sourcetype=splunk_resource_usage
+              component=PerProcess
+              data.search_props.role=head
+              data.search_props.sid=*
+              $filter_sh$ by _time span=10s
+          </query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+        <option name="refresh.display">progressbar</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel depends="$hide_me$">
+      <table>
+        <search id="res_sh">
+          <query>
+            index=_introspection sourcetype=splunk_resource_usage component=Hostwide $filter_sh$
+            | rename data.* as *
+            | eval cpu=cpu_system_pct+cpu_user_pct
+            | eval mem_used = mem_used/1024.0
+            | eval load=normalized_load_avg_1min
+          </query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel depends="$hide_me$">
+      <table>
+        <search id="idx_cpu">
+          <query>
+            index=_introspection sourcetype=splunk_resource_usage component=Hostwide $filter_idx$
+            | rename data.* as *
+            | eval cpu=cpu_system_pct+cpu_user_pct
+          </query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel depends="$hide_me$">
+      <table>
+        <search id="idx_load">
+          <query>
+            index=_introspection sourcetype=splunk_resource_usage component=Hostwide $filter_idx$
+            | rename data.* as *
+            | eval load=normalized_load_avg_1min
+          </query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel depends="$hide_me$">
+      <table>
+        <search id="idx_mem">
+          <query>
+            index=_introspection sourcetype=splunk_resource_usage component=Hostwide $filter_idx$
+            | rename data.* as *
+            | eval mem_used = mem_used/1024.0
+          </query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+      </table>
+    </panel>
+  </row>
+</form>

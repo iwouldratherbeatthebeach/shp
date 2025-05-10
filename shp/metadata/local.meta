@@ -1,0 +1,18 @@
+#   Version 9.4.2
+#
+# This file contains example patterns for the metadata files default.meta and
+# local.meta
+#
+
+# This example would make all of the objects in an app globally accessible to
+# all apps
+[]
+export = system
+
+[views/searchconcurrency]
+version = 9.3.0
+modtime = 1746899638.609612000
+
+[views/searchmetrics]
+version = 9.3.0
+modtime = 1746900228.382740000
