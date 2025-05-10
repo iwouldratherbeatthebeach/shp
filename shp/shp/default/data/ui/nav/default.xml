@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<nav color="#E32819">
+  <view name="datalocator"       default="false"/>
+  <view name="searchconcurrency" default="true" />
+  <view name="svc_explorer"      default="false"/>
+  <view name="searchmetrics"     default="false"/>
+</nav>
