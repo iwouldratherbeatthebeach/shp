@@ -1,3 +1,0 @@
-[views/*]
-access = read : [ * ], write : [ * ]
-export = system
